@@ -1,0 +1,22 @@
+---
+- name: Change Savegame
+  hosts: factorio_servers
+  remote_user: root
+  tasks:
+    - name: Stop factorio
+      become: True
+      systemd: 
+        name: factorio
+        state: stopped
+
+    - name: move current savegame
+      command: mv /opt/factorio/saves/current.zip /opt/factorio/saves/{{ old_savegame }}.zip
+      
+    - name: move new savegame to current
+      command: mv /opt/factorio/saves/{{ new_savegame }}.zip /opt/factorio/saves/current.zip
+    
+    - name: Start factorio
+      become: True
+      systemd: 
+        name: factorio
+        state: started

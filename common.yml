@@ -1,0 +1,24 @@
+---
+- name: Bootstrapping new Servers
+  hosts: bootstraped_servers
+  remote_user: root
+  roles:
+    - common
+
+  tasks:
+    - name: Remove Line with current host from hostfile
+      local_action: 
+        module: lineinfile 
+        dest: hosts
+        state: absent
+        regexp: "{{ inventory_hostname }}"
+
+    - name: Add the current host to hostfile
+      local_action: 
+        module: lineinfile 
+        dest: hosts
+        state: present
+        insertafter: "ready_to_deploy"
+        line: "{{ inventory_hostname }}"
+      
+   

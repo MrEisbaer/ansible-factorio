@@ -1,0 +1,66 @@
+---
+- include: users.yml
+- name: Configure SSH
+  become: true
+  template:
+    src: sshd_config.j2
+    dest: /etc/ssh/sshd_config
+  notify:
+    - restart ssh
+- name: Install uwf
+  become: true
+  apt:
+    name: ufw
+    update_cache: yes
+    cache_valid_time: 3600
+    state: present
+- name: Configure ufw
+  become: true
+  ufw:
+    policy: deny
+    rule: allow
+    name: OpenSSH
+    state: enabled
+- name: Install fail2ban
+  become: true
+  apt:
+    name: fail2ban
+    update_cache: yes
+    cache_valid_time: 3600
+    state: present
+- name: Configure fail2ban
+  become: true
+  template:
+    src: jail.j2
+    dest: /etc/fail2ban/jail.local
+  notify:
+    - restart fail2ban
+- name: Change Hostname
+  become: True
+  hostname:
+    name: "{{ inventory_hostname }}" #should be hard coded with no domain
+  register: hostname
+- name: restart machine
+  shell: sleep 2 && shutdown -r now "Ansible updates triggered"
+  async: 1
+  poll: 0
+  become: True
+  ignore_errors: true
+  when: hostname.changed
+- name: waiting for server to come back
+  when: hostname.changed
+  local_action:
+    module: wait_for
+    host: "{{ inventory_hostname }}" #should be hard coded with no domain
+    search_regex: OpenSSH
+    port: 22
+    state: started
+    delay: 15
+    timeout: 120
+    connect_timeout: 5
+- name: Change Hostfile
+  become: True
+  replace:
+    dest: /etc/hosts
+    regexp: (?<=(127\W0\W1\W1))[ \t]*([^\n\r]*)
+    replace: "\t{{ ansible_hostname }}\t{{ inventory_hostname }}" #should be hard coded with no domain

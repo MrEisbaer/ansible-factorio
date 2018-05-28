@@ -1,0 +1,8 @@
+---
+ssh_users:
+  user1:
+    pass: # gen a new password with mkpasswd --method=sha-512
+    ssh_key: # your ssh key
+  user2:
+    pass: # gen a new password with mkpasswd --method=sha-512
+    ssh_key: # your ssh key

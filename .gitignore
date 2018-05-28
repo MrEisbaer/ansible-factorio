@@ -1,0 +1,5 @@
+/roles/common/vars/main.yml
+/roles/factorio/files/map-gen-settings.json
+/roles/factorio/files/server-settings.json
+hosts
+*.retry

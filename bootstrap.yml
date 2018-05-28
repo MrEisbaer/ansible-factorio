@@ -1,0 +1,50 @@
+---
+- name: Bootstrapping new Servers
+  hosts: new_servers
+  gather_facts: False
+  remote_user: root
+  tasks:
+      
+    - name: install python 2
+      raw: test -e /usr/bin/python || (apt -y update && apt install -y python-minimal)
+
+    - name: Update everything
+      become: True
+      apt:
+        update_cache: yes
+        upgrade: dist
+        cache_valid_time: 600
+      register: update
+
+    - name: restart machine
+      shell: sleep 2 && shutdown -r now "Ansible updates triggered"
+      async: 1
+      poll: 0
+      become: True
+      ignore_errors: true
+
+    - name: waiting for server to come back
+      local_action:
+        module: wait_for
+        host: "{{ inventory_hostname }}"
+        search_regex: OpenSSH
+        port: 22
+        state: started
+        delay: 15
+        timeout: 120
+        connect_timeout: 5
+
+    - name: Remove Line with current host from hostfile
+      local_action: 
+        module: lineinfile 
+        dest: hosts
+        state: absent
+        regexp: "{{ inventory_hostname }}"
+
+    - name: Add the current host to hostfile
+      local_action: 
+        module: lineinfile 
+        dest: hosts
+        state: present
+        insertafter: "bootstraped"
+        line: "{{ inventory_hostname }}"

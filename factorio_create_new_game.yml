@@ -1,0 +1,27 @@
+---
+- name: Create new Savegame
+  hosts: factorio_servers
+  remote_user: root
+  tasks:
+    - name: Stop factorio
+      become: True
+      systemd: 
+        name: factorio
+        state: stopped
+
+    - name: create new savegame
+      become: True
+      become_user: factorio
+      command: /opt/factorio/bin/x64/factorio --create /opt/factorio/saves/new_game --map-gen-settings /opt/factorio/data/map-gen-settings.json
+
+    - name: move current savegame
+      command: mv /opt/factorio/saves/current.zip /opt/factorio/saves/{{ old_savegame }}.zip
+
+    - name: move new savegame to current
+      command: mv /opt/factorio/saves/new_game.zip /opt/factorio/saves/current.zip
+    
+    - name: Start factorio
+      become: True
+      systemd: 
+        name: factorio
+        state: started

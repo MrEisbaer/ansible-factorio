@@ -1,0 +1,11 @@
+[Unit]
+Description=Factorio Headless Server
+
+[Service]
+Type=simple
+ExecStart=/opt/factorio/bin/x64/factorio --start-server current --server-settings /opt/factorio/data/server-settings.json
+User=factorio
+
+[Install]
+WantedBy=multi-user.target
+

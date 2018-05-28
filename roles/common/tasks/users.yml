@@ -1,0 +1,24 @@
+---
+- name: Add user groups
+  become: True
+  with_dict: "{{ ssh_users }}"
+  group:
+    name: "{{ item.key }}"
+    state: present
+- name: Add users
+  become: True
+  with_dict: "{{ ssh_users }}"
+  user:
+    name: "{{ item.key }}"
+    state: present
+    group: "{{ item.key }}"
+    groups: sudo
+    password: "{{ item.value.pass }}"
+    update_password: always
+    shell: /bin/bash
+- name: Set up authorized_keys for users
+  become: True
+  with_dict: "{{ ssh_users }}"
+  authorized_key: 
+    user: "{{ item.key }}"
+    key: "{{ item.value.ssh_key }}"

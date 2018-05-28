@@ -1,0 +1,98 @@
+---
+# - name: unpack factorio.tar.gz
+#   unarchive:
+#     src: https://www.factorio.com/get-download/0.14.22/headless/linux64
+#     dest: /opt/
+#     remote_src: true
+# - name: Add factorio group
+#   become: True
+#   group:
+#     name: "factorio"
+#     state: present
+- name: add factorio user
+  become: True
+  user:
+    name: "factorio"
+    state: present
+    group: "factorio"
+    groups: sudo
+    shell: /bin/bash
+    home: /opt/factorio
+    move_home: yes
+
+- name: passwordless sudo for the factorio user
+  lineinfile:
+    dest: /etc/sudoers
+    state: present
+    regexp: 'factorio'
+    line: 'factorio ALL=(ALL) NOPASSWD: ALL'
+    validate: 'visudo -cf %s'
+- name: change owner of factorio directory
+  become: True
+  file:
+    path: /opt/factorio
+    owner: factorio
+    group: factorio
+    recurse: yes
+
+- name: configure ufw for factorio
+  become: True
+  ufw:
+    policy: deny
+    rule: allow
+    port: 34197
+    proto: udp
+    state: enabled
+
+- name: create systemd file
+  become: True
+  copy:
+    src: factorio.service
+    dest: /etc/systemd/system/factorio.service
+  register: copy
+
+- name: run systemctl daemon-reload
+  become: True
+  systemd:
+    name: factorio
+    daemon-reload: yes
+  when: copy.changed
+
+- name: Copy map configuration
+  become: True
+  become_user: factorio
+  copy:
+    src: map-gen-settings.json
+    dest: /opt/factorio/data/map-gen-settings.json
+
+- name: Copy server configuration
+  become: True
+  become_user: factorio
+  copy:
+    src: server-settings.json
+    dest: /opt/factorio/data/server-settings.json
+  register: config
+
+- name: Check if savegame exists
+  stat:
+    path: /opt/factorio/saves/current.zip
+  register: sym
+
+- name: Create Savegame
+  become: True
+  become_user: factorio
+  command: /opt/factorio/bin/x64/factorio --create /saves/current --map-gen-settings data/map-gen-settings.json
+  when: sym.stat.exists == False
+
+- name: Start Factorio
+  become: True
+  systemd: 
+    name: factorio
+    state: started
+
+- name: Restart Factorio
+  become: True
+  systemd: 
+    name: factorio
+    state: restarted
+  when: config.changed
