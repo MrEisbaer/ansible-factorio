@@ -56,6 +56,3 @@ Feel free and make Merge-Requests
 3. a new way for change hostname with domain and without.
 
 
-## About Creators
-42 N.E.R.D.S. a german softwaredeveloper and operations company. http://42nerds.com 
-
